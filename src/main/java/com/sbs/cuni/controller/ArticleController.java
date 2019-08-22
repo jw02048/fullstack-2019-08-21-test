@@ -36,6 +36,7 @@ public class ArticleController {
 
 		// 게시물 가져올 때 댓글 개수도 가져오도록
 		param.put("extra__repliesCount", true);
+		param.put("extra__name", true);
 
 		if (param.containsKey("page") == false) {
 			param.put("page", "1");
@@ -62,7 +63,13 @@ public class ArticleController {
 			return "common/redirect";
 		}
 
-		Article article = articleService.getOne(Maps.of("id", id));
+		Map<String, Object> param = new HashMap<>();
+		param.put("id", id);
+		param.put("extra__name", true);
+		
+		articleService.addHit(param);
+
+		Article article = articleService.getOne(param);
 
 		model.addAttribute("article", article);
 
@@ -72,9 +79,13 @@ public class ArticleController {
 	@RequestMapping("/article/getReplies")
 	@ResponseBody
 	public Map<String, Object> getAllMessages(int articleId, int from) {
+		Map<String, Object> param = new HashMap<>();
+		param.put("articleId", articleId);
+		param.put("from", from);
+		param.put("extra__name", true);
 		Map<String, Object> rs = new HashMap<>();
 		rs.put("resultCode", "S-1");
-		rs.put("replies", articleService.getReplies(Maps.of("articleId", articleId, "from", from)));
+		rs.put("replies", articleService.getReplies(param));
 
 		return rs;
 	}
@@ -90,6 +101,21 @@ public class ArticleController {
 
 	@RequestMapping("/article/doAdd")
 	public String doAdd(Model model, @RequestParam Map<String, Object> param, HttpSession session, long boardId) {
+
+		if (boardId == 1) {
+			long id = (long) 0;
+			long loginedMemberId = (long) session.getAttribute("loginedMemberId");
+			Map<String, Object> checkPermmisionRs = articleService.checkPermmision(
+					Maps.of("Article", true, "Add", true, "loginedMemberId", loginedMemberId, "id", id));
+
+			if (((String) checkPermmisionRs.get("resultCode")).startsWith("F-")) {
+				model.addAttribute("alertMsg", ((String) checkPermmisionRs.get("msg")));
+				model.addAttribute("historyBack", true);
+
+				return "common/redirect";
+			}
+		}
+
 		param.put("memberId", session.getAttribute("loginedMemberId"));
 		long newId = articleService.add(param);
 
@@ -126,12 +152,13 @@ public class ArticleController {
 	@RequestMapping("/article/doModify")
 	public String doModify(Model model, @RequestParam Map<String, Object> param, HttpSession session, long id,
 			long boardId, HttpServletRequest req) {
-		// String referer = req.getHeader("referer");
-		long loginedMemberId = (long) session.getAttribute("loginedMemberId");
-		Map<String, Object> checkModifyPermmisionRs = articleService.checkModifyPermmision(id, loginedMemberId);
 
-		if (((String) checkModifyPermmisionRs.get("resultCode")).startsWith("F-")) {
-			model.addAttribute("alertMsg", ((String) checkModifyPermmisionRs.get("msg")));
+		long loginedMemberId = (long) session.getAttribute("loginedMemberId");
+		Map<String, Object> checkPermmisionRs = articleService.checkPermmision(
+				Maps.of("Article", true, "Modify", true, "id", id, "loginedMemberId", loginedMemberId));
+
+		if (((String) checkPermmisionRs.get("resultCode")).startsWith("F-")) {
+			model.addAttribute("alertMsg", ((String) checkPermmisionRs.get("msg")));
 			model.addAttribute("historyBack", true);
 
 			return "common/redirect";
@@ -155,9 +182,21 @@ public class ArticleController {
 	}
 
 	@RequestMapping("/article/doDelete")
-	public String doDelete(Model model, @RequestParam Map<String, Object> param, HttpSession session, long id, long boardId) {
-		param.put("id", id);
+	public String doDelete(Model model, @RequestParam Map<String, Object> param, HttpSession session, long id,
+			long boardId) {
 
+		long loginedMemberId = (long) session.getAttribute("loginedMemberId");
+		Map<String, Object> checkPermmisionRs = articleService.checkPermmision(
+				Maps.of("Article", true, "Delete", true, "id", id, "loginedMemberId", loginedMemberId));
+
+		if (((String) checkPermmisionRs.get("resultCode")).startsWith("F-")) {
+			model.addAttribute("alertMsg", ((String) checkPermmisionRs.get("msg")));
+			model.addAttribute("historyBack", true);
+
+			return "common/redirect";
+		}
+
+		param.put("id", id);
 		Map<String, Object> deleteRs = articleService.delete(param);
 
 		String msg = (String) deleteRs.get("msg");
@@ -200,11 +239,17 @@ public class ArticleController {
 
 	@RequestMapping("/article/doDeleteReply")
 	@ResponseBody
-	public Map<String, Object> doDeleteReply(Model model, @RequestParam Map<String, Object> param,
+	public Map<String, Object> doDeleteReply(Model model, @RequestParam Map<String, Object> param, long id,
 			HttpSession session) {
 
-		long loginedId = (long) session.getAttribute("loginedMemberId");
-		param.put("loginedMemberId", loginedId);
+		long loginedMemberId = (long) session.getAttribute("loginedMemberId");
+		Map<String, Object> checkPermmisionRs = articleService
+				.checkPermmision(Maps.of("Reply", true, "Delete", true, "id", id, "loginedMemberId", loginedMemberId));
+
+		if (((String) checkPermmisionRs.get("resultCode")).startsWith("F-")) {
+			return checkPermmisionRs;
+		}
+
 		Map<String, Object> deleteReplyRs = articleService.deleteReply(param);
 
 		String msg = (String) deleteReplyRs.get("msg");
@@ -217,13 +262,21 @@ public class ArticleController {
 
 	@RequestMapping("/article/doModifyReply")
 	@ResponseBody
-	public Map<String, Object> doModifyReply(Model model, @RequestParam Map<String, Object> param, HttpSession session,
-			HttpServletRequest request, long id) {
+	public Map<String, Object> doModifyReply(Model model, @RequestParam Map<String, Object> param, long id,
+			HttpSession session) {
 
 		try {
 			Thread.sleep(100);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+
+		long loginedMemberId = (long) session.getAttribute("loginedMemberId");
+		Map<String, Object> checkPermmisionRs = articleService
+				.checkPermmision(Maps.of("Reply", true, "Modify", true, "id", id, "loginedMemberId", loginedMemberId));
+
+		if (((String) checkPermmisionRs.get("resultCode")).startsWith("F-")) {
+			return checkPermmisionRs;
 		}
 
 		param.put("id", id);

@@ -15,6 +15,8 @@ public interface ArticleService {
 	public Map<String, Object> getPagedList(Map<String, Object> param);
 
 	public List<ArticleReply> getReplies(Map<String, Object> args);
+	
+	public void addHit(Map<String, Object> args);
 
 	public Article getOne(Map<String, Object> args);
 
@@ -33,8 +35,10 @@ public interface ArticleService {
 	public Map<String, Object> delete(Map<String, Object> args);
 
 	public Map<String, Object> deleteReply(Map<String, Object> args);
+	
+	public Map<String, Object> checkAddPermmision(long loginedMemberId);
 
-	public Map<String, Object> checkModifyPermmision(long id, long loginedMemberId);
+	public Map<String, Object> checkPermmision(Map<String, Object> args);
 
 	public Board getBoard(long boardId);
 }

@@ -45,7 +45,7 @@
 }
 </style>
 
-
+<div class="con text-align-right">조회수 : ${article.hit}</div>
 <div class="article-detail table-common con">
 	<table>
 		<colgroup>
@@ -55,6 +55,10 @@
 			<tr>
 				<th>ID</th>
 				<td><c:out value="${article.id}" /></td>
+			</tr>
+			<tr>
+				<th>작성자</th>
+				<td><c:out value="${article.extra.name}" /></td>
 			</tr>
 			<tr>
 				<th>날짜</th>
@@ -101,6 +105,7 @@
 	<table>
 		<colgroup>
 			<col width="80">
+			<col width="100">
 			<col width="180">
 			<col>
 			<col width="120">
@@ -109,6 +114,7 @@
 		<thead>
 			<tr>
 				<th>ID</th>
+				<th>작성자</th>
 				<th>등록날짜</th>
 				<th>내용</th>
 				<th>비고</th>
